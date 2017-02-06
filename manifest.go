@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 type manifest struct {
@@ -14,7 +15,7 @@ type manifest struct {
 type pack struct {
 	name    string `json:"name"`
 	image   string `json:"image"`
-	alias   string `json:"alias"`
+	cmd     string `json:"cmd"`
 	version string `json:"version"`
 }
 
@@ -67,10 +68,11 @@ func (m *manifest) writeToFile(path string) error {
 }
 
 func (m *manifest) writeAliasFile(path string) error {
-	//TODO test me
+	// TODO write bash functions to file
+	// to prevent cli from interpreting flags in dope run
 	var buf bytes.Buffer
 	for _, p := range m.packs {
-		buf.WriteString(fmt.Sprintf("alias %s=%s\n", p.name, p.alias))
+		buf.WriteString(p.bashFunction() + "\n")
 	}
 	return ioutil.WriteFile(path, buf.Bytes(), 0644)
 }
@@ -102,4 +104,9 @@ func (p *pack) checkForUpdate() (avail bool, image string) {
 	// true if that is higher than our tag
 	// return new tag
 	return true, "some_tag"
+}
+
+func (p *pack) bashFunction() string {
+	// {{p.name}}() { {{os.Args[0]}} run {{p.name}} '{{p.cmd}} $@' }
+	return fmt.Sprintf("%s() { %s run %s '%s $@' }", p.name, os.Args[0], p.name, p.cmd)
 }

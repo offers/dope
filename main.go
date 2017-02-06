@@ -58,6 +58,24 @@ func main() {
 			},
 		},
 		{
+			Name:    "run",
+			Aliases: []string{"r"},
+			Usage:   "run a package's alias",
+			Action: func(c *cli.Context) (err error) {
+				notifyIfSelfUpdateAvail()
+
+				if c.NArg() > 0 {
+					// run package with args
+					name := c.Args()[0]
+					args := c.Args()[1:]
+					fmt.Println("TODO run", name, args)
+				} else {
+					err = errors.New("no package name given to run")
+				}
+				return err
+			},
+		},
+		{
 			Name:    "check",
 			Aliases: []string{"ch"},
 			Usage:   "check for updates to package",
