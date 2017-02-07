@@ -3,30 +3,16 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"os"
 )
 
 type manifest struct {
-	packs []pack
-}
-
-type pack struct {
-	name    string `json:"name"`
-	image   string `json:"image"`
-	cmd     string `json:"cmd"`
 	version string `json:"version"`
+	packs   []pack `json:"packs"`
 }
 
 func newManifest() *manifest {
 	return &manifest{}
-}
-
-// Returns the manifest as a JSON byte slice
-func (m *manifest) json() ([]byte, error) {
-	//TODO test me
-	return json.Marshal(m.packs)
 }
 
 // Reads from the manifest JSON file on disk
@@ -60,7 +46,7 @@ func (m *manifest) addPack(p pack) {
 }
 
 func (m *manifest) writeToFile(path string) error {
-	if data, err := m.json(); err != nil {
+	if data, err := json.Marshal(m); err != nil {
 		return ioutil.WriteFile(path, data, 0644)
 	} else {
 		return err
@@ -95,18 +81,4 @@ func (m *manifest) getPack(name string) *pack {
 		}
 	}
 	return nil
-}
-
-func (p *pack) checkForUpdate() (avail bool, image string) {
-	// TODO implement check on p
-	// list tags in docker repo
-	// find semantically highest tag
-	// true if that is higher than our tag
-	// return new tag
-	return true, "some_tag"
-}
-
-func (p *pack) bashFunction() string {
-	// {{p.name}}() { {{os.Args[0]}} run {{p.name}} '{{p.cmd}} $@' }
-	return fmt.Sprintf("%s() { %s run %s '%s $@' }", p.name, os.Args[0], p.name, p.cmd)
 }
