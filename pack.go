@@ -17,19 +17,20 @@ type pack struct {
 }
 
 func (p *pack) checkForUpdate() (avail bool, tag string) {
+	//TODO don't assume private registry
 	parts := strings.Split(p.image, "/")
 	repo := parts[0]
 	url := fmt.Sprintf("https://%s/", repo)
 	username := "" // anonymous
 	password := "" // anonymous
 	reg, err := registry.New(url, username, password)
-	if err == nil {
+	if err != nil {
 		fmt.Println(err)
 		return false, ""
 	}
 
 	tags, err := reg.Tags(fmt.Sprintf("%s/%s", parts[1], parts[2]))
-	if err == nil {
+	if err != nil {
 		fmt.Println(err)
 		return false, ""
 	}

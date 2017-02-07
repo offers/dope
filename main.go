@@ -4,13 +4,33 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
 	"gopkg.in/urfave/cli.v1"
 )
+
+func initConfDir() string {
+	home, err := homedir.Dir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	confDir := filepath.Join(home, ".dope")
+	os.MkdirAll(confDir, 0755)
+	return confDir
+}
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "dope"
+
+	confDir := initConfDir()
+	manifest, err := initManifest(confDir)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
 	app.Commands = []cli.Command{
 		{
@@ -85,7 +105,12 @@ func main() {
 				if c.NArg() > 0 {
 					// check package for updates
 					name := c.Args()[0]
-					fmt.Println("TODO check", name)
+					avail, tag := manifest.checkForUpdate(name)
+					if avail {
+						fmt.Println("New version", tag, "available for", name)
+					} else {
+						fmt.Println("No updates available for", name)
+					}
 				} else {
 					err = errors.New("no package name given to check")
 				}

@@ -62,6 +62,10 @@
 			"Rev": "392c28fe23e1c45ddba891b0320b3b5df220beea"
 		},
 		{
+			"ImportPath": "github.com/mitchellh/go-homedir",
+			"Rev": "b8bc1bf767474819792c23f32d8286a45736f1c6"
+		},
+		{
 			"ImportPath": "github.com/opencontainers/go-digest",
 			"Comment": "v1.0.0-rc0",
 			"Rev": "aa2ec055abd10d26d539eb630a92241b781ce4bc"
