@@ -2,34 +2,52 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/chriskite/docker-registry-client/registry"
+	"github.com/docker/distribution/reference"
+	regclient "github.com/docker/distribution/registry/client"
+	_ "github.com/motemen/go-loghttp/global"
 )
 
 type pack struct {
-	name  string `json:"name"`
-	image string `json:"image"`
-	cmd   string `json:"cmd"`
-	tag   string `json:"tag"`
+	Name  string `json:"name"`
+	Image string `json:"image"`
+	Cmd   string `json:"cmd"`
+	Tag   string `json:"tag"`
+}
+
+func newPack(image string) *pack {
+	parts := strings.Split(image, "/")
+	name := parts[len(parts)-1]
+	return &pack{Name: name, Image: image}
+}
+
+func getRepoTags(image string) ([]string, error) {
+	ref, err := reference.ParseNamed(image)
+	if err != nil {
+		return []string{}, err
+	}
+
+	url := fmt.Sprintf("https://%s/", reference.Domain(ref))
+	name, err := reference.WithName(reference.Path(ref))
+	if err != nil {
+		return []string{}, err
+	}
+
+	r, err := regclient.NewRepository(nil, name, url, http.DefaultTransport)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return r.Tags(nil).All(nil)
 }
 
 func (p *pack) checkForUpdate() (avail bool, tag string) {
-	//TODO don't assume private registry
-	parts := strings.Split(p.image, "/")
-	repo := parts[0]
-	url := fmt.Sprintf("https://%s/", repo)
-	username := "" // anonymous
-	password := "" // anonymous
-	reg, err := registry.New(url, username, password)
-	if err != nil {
-		fmt.Println(err)
-		return false, ""
-	}
-
-	tags, err := reg.Tags(fmt.Sprintf("%s/%s", parts[1], parts[2]))
+	tags, err := getRepoTags(p.Image)
 	if err != nil {
 		fmt.Println(err)
 		return false, ""
@@ -37,17 +55,18 @@ func (p *pack) checkForUpdate() (avail bool, tag string) {
 
 	highTag := ""
 	for _, t := range tags {
-		if compareTags(t, highTag) == 1 {
+		match, _ := regexp.MatchString(`\d\.\d\.\d`, t)
+		if match && compareTags(t, highTag) == 1 {
 			highTag = t
 		}
 	}
 
 	if "" == highTag {
-		// no semantic tags in repo
+		fmt.Println("no semantic tags in repo")
 		return false, ""
 	}
 
-	if compareTags(highTag, p.tag) == 1 {
+	if compareTags(highTag, p.Tag) == 1 {
 		return true, highTag
 	}
 
@@ -62,7 +81,12 @@ func compareTags(t1 string, t2 string) int {
 	nums1 := strings.Split(t1, ".")
 	nums2 := strings.Split(t2, ".")
 
-	for i, _ := range nums1 {
+	l := len(nums1)
+	if len(nums2) < l {
+		l = len(nums2)
+	}
+
+	for i := 0; i < l; i++ {
 		v1, _ := strconv.ParseInt(nums1[i], 0, 64)
 		v2, _ := strconv.ParseInt(nums2[i], 0, 64)
 
@@ -79,5 +103,5 @@ func compareTags(t1 string, t2 string) int {
 
 func (p *pack) bashFunction() string {
 	// {{p.name}}() { {{os.Args[0]}} run {{p.name}} '{{p.cmd}} $@' }
-	return fmt.Sprintf("%s() { %s run %s '%s $@' }", p.name, os.Args[0], p.name, p.cmd)
+	return fmt.Sprintf("%s() { %s run %s '%s $@' }", p.Name, os.Args[0], p.Name, p.Cmd)
 }

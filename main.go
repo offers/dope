@@ -69,9 +69,15 @@ func main() {
 
 				if c.NArg() > 0 {
 					// install package
-					name := c.Args()[0]
-					fmt.Println("TODO install", name)
+					image := c.Args()[0]
+					p := newPack(image)
+					if err := manifest.addPack(p); err != nil {
+						fmt.Println(err)
+						return err
+					}
+					fmt.Println("installed", p.Name)
 				} else {
+					fmt.Println(err)
 					err = errors.New("no package name given to install")
 				}
 				return err

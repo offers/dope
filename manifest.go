@@ -13,8 +13,8 @@ const ManifestVersion int64 = 1
 
 type Manifest struct {
 	filename string
-	Version  int64  `json:"version"`
-	Packs    []pack `json:"packs"`
+	Version  int64   `json:"version"`
+	Packs    []*pack `json:"packs"`
 }
 
 func initManifest(confDir string) (*Manifest, error) {
@@ -55,15 +55,16 @@ func manifestFromFile(path string) (*Manifest, error) {
 func (m *Manifest) removePack(name string) {
 	//TODO test me
 	for i, p := range m.Packs {
-		if p.name == name {
+		if p.Name == name {
 			m.Packs = append(m.Packs[:i], m.Packs[i+1:]...)
 			return
 		}
 	}
 }
 
-func (m *Manifest) addPack(p pack) {
+func (m *Manifest) addPack(p *pack) error {
 	m.Packs = append(m.Packs, p)
+	return m.writeToFile()
 }
 
 func (m *Manifest) writeToFile() error {
@@ -101,8 +102,8 @@ func (m *Manifest) checkForUpdate(name string) (avail bool, image string) {
 func (m *Manifest) getPack(name string) *pack {
 	// TODO test me
 	for _, p := range m.Packs {
-		if p.name == name {
-			return &p
+		if p.Name == name {
+			return p
 		}
 	}
 	return nil
