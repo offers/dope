@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -14,7 +13,7 @@ const ManifestVersion int64 = 1
 type Manifest struct {
 	filename string
 	Version  int64   `json:"version"`
-	Packs    []*pack `json:"packs"`
+	Packs    []*Pack `json:"packs"`
 }
 
 func initManifest(confDir string) (*Manifest, error) {
@@ -62,7 +61,7 @@ func (m *Manifest) removePack(name string) {
 	}
 }
 
-func (m *Manifest) addPack(p *pack) error {
+func (m *Manifest) addPack(p *Pack) error {
 	m.Packs = append(m.Packs, p)
 	return m.writeToFile()
 }
@@ -79,14 +78,11 @@ func (m *Manifest) writeToFile() error {
 	}
 }
 
-func (m *Manifest) writeAliasFile(path string) error {
-	// TODO write bash functions to file
-	// to prevent cli from interpreting flags in dope run
-	var buf bytes.Buffer
-	for _, p := range m.Packs {
-		buf.WriteString(p.bashFunction() + "\n")
-	}
-	return ioutil.WriteFile(path, buf.Bytes(), 0644)
+// For each pack, write a file to /usr/local/bin which
+// will execute that docker image through dope
+func (m *Manifest) writeAliasFiles() error {
+	//TODO implement me
+	return nil
 }
 
 // Check if new version of named package is avilable
@@ -99,7 +95,7 @@ func (m *Manifest) checkForUpdate(name string) (avail bool, image string) {
 	return false, ""
 }
 
-func (m *Manifest) getPack(name string) *pack {
+func (m *Manifest) getPack(name string) *Pack {
 	// TODO test me
 	for _, p := range m.Packs {
 		if p.Name == name {
@@ -107,4 +103,13 @@ func (m *Manifest) getPack(name string) *pack {
 		}
 	}
 	return nil
+}
+
+func (m *Manifest) isInstalled(image string) bool {
+	for _, p := range m.Packs {
+		if p.Image == image {
+			return true
+		}
+	}
+	return false
 }

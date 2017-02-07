@@ -13,20 +13,21 @@ import (
 	_ "github.com/motemen/go-loghttp/global"
 )
 
-type pack struct {
-	Name  string `json:"name"`
-	Image string `json:"image"`
-	Cmd   string `json:"cmd"`
-	Tag   string `json:"tag"`
+type Pack struct {
+	Name    string `json:"name"`
+	Image   string `json:"image"`
+	Cmd     string `json:"cmd"`
+	Tag     string `json:"tag"`
+	ImageId string `json:"imageId"`
 }
 
-func newPack(image string) *pack {
+func newPack(image string) *Pack {
 	parts := strings.Split(image, "/")
 	name := parts[len(parts)-1]
-	return &pack{Name: name, Image: image}
+	return &Pack{Name: name, Image: image}
 }
 
-func getRepoTags(image string) ([]string, error) {
+func repoTags(image string) ([]string, error) {
 	ref, err := reference.ParseNamed(image)
 	if err != nil {
 		return []string{}, err
@@ -46,23 +47,35 @@ func getRepoTags(image string) ([]string, error) {
 	return r.Tags(nil).All(nil)
 }
 
-func (p *pack) checkForUpdate() (avail bool, tag string) {
-	tags, err := getRepoTags(p.Image)
+func highTag(image string) (string, error) {
+	tags, err := repoTags(image)
 	if err != nil {
-		fmt.Println(err)
-		return false, ""
+		return "", err
 	}
 
 	highTag := ""
 	for _, t := range tags {
 		match, _ := regexp.MatchString(`\d\.\d\.\d`, t)
-		if match && compareTags(t, highTag) == 1 {
+		if match && (highTag == "" || compareTags(t, highTag) == 1) {
 			highTag = t
 		}
 	}
 
+	return highTag, nil
+}
+
+// TODO handle versions starting with v, e.g. v1.0.0
+// TODO use 'latest' if no semantic tags, and check image hash for update
+func (p *Pack) checkForUpdate() (avail bool, tag string) {
+	highTag, err := highTag(p.Image)
+	if err != nil {
+		log.Error(err)
+		return false, ""
+	}
+
+	log.Debug("highTag:", highTag)
 	if "" == highTag {
-		fmt.Println("no semantic tags in repo")
+		log.Warning("No semantic tags in repo")
 		return false, ""
 	}
 
@@ -101,7 +114,7 @@ func compareTags(t1 string, t2 string) int {
 	return 0
 }
 
-func (p *pack) bashFunction() string {
+func (p *Pack) runString() string {
 	// {{p.name}}() { {{os.Args[0]}} run {{p.name}} '{{p.cmd}} $@' }
 	return fmt.Sprintf("%s() { %s run %s '%s $@' }", p.Name, os.Args[0], p.Name, p.Cmd)
 }

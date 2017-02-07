@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/op/go-logging"
 	"gopkg.in/urfave/cli.v1"
 )
+
+var log = logging.MustGetLogger("dope")
 
 func initConfDir() string {
 	home, err := homedir.Dir()
@@ -21,9 +25,19 @@ func initConfDir() string {
 	return confDir
 }
 
+func setupLogging() {
+	backend := logging.NewLogBackend(os.Stderr, "", 0)
+	var format = logging.MustStringFormatter(
+		`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`)
+	backendFormatter := logging.NewBackendFormatter(backend, format)
+	logging.SetBackend(backendFormatter)
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "dope"
+
+	setupLogging()
 
 	confDir := initConfDir()
 	manifest, err := initManifest(confDir)
@@ -68,19 +82,32 @@ func main() {
 				notifyIfSelfUpdateAvail()
 
 				if c.NArg() > 0 {
-					// install package
 					image := c.Args()[0]
-					p := newPack(image)
-					if err := manifest.addPack(p); err != nil {
-						fmt.Println(err)
+
+					if manifest.isInstalled(image) {
+						log.Info(image, "already installed, try update instead")
+						return nil
+					}
+
+					// install package
+					pack, err := installImage(image)
+					if err != nil {
+						log.Error(err)
 						return err
 					}
-					fmt.Println("installed", p.Name)
+
+					if err := manifest.addPack(pack); err != nil {
+						log.Error(err)
+						return err
+					}
+
+					log.Info("Installed", pack.Name, pack.Tag)
 				} else {
-					fmt.Println(err)
 					err = errors.New("no package name given to install")
+					log.Error(err)
+					return err
 				}
-				return err
+				return nil
 			},
 		},
 		{
@@ -138,4 +165,26 @@ func notifyIfSelfUpdateAvail() {
 func selfUpdateAvail() bool {
 	// TODO implement me
 	return false
+}
+
+func installImage(image string) (*Pack, error) {
+	tag, err := highTag(image)
+	if err != nil {
+		return nil, err
+	}
+
+	//TODO docker pull image:tag
+
+	parts := strings.Split(image, "/")
+	if len(parts) < 1 {
+		return nil, errors.New("invalid image: " + image)
+	}
+	name := parts[len(parts)-1]
+
+	p := &Pack{
+		Image: image,
+		Tag:   tag,
+		Name:  name,
+	}
+	return p, nil
 }
