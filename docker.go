@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"fmt"
+	"github.com/offers/dope/out"
 )
 
 func newDockerClient() (*docker.Client, error) {
@@ -28,11 +29,10 @@ func dockerPull(repo string, tag string) error {
 	opts := docker.PullImageOptions{
 		Repository:        repo,
 		Tag:               tag,
-		OutputStream:      os.Stderr,
 		InactivityTimeout: time.Duration(30) * time.Second,
 	}
 
-	log.Info("Pulling image", repo, ":", tag, "...")
+	out.Infof("Pulling image %s:%s...\n", repo, tag)
 	return client.PullImage(opts, docker.AuthConfiguration{})
 }
 
@@ -69,7 +69,7 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 		Name: imageData.ID,
 		OutputStream: exportFile,
 	}
-	log.Infof("Extracting docker image to find .dope.json...")
+	out.Info("Extracting docker image to find .dope.json...")
 	err = client.ExportImage(exportOpts)
 	if err != nil {
 		return []byte{}, err
@@ -92,7 +92,6 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 			log.Fatal(err)
 		}
 		if strings.HasSuffix(hdr.Name, "layer.tar")  {
-			log.Debugf("Layer file: %s", hdr.Name)
 			buf := make([]byte, hdr.Size)
 			_, err := tr.Read(buf)
 			if err != nil {
@@ -121,7 +120,6 @@ func dockerGetFileFromLayer(filename string, layer []byte) ([]byte, error){
 			log.Fatal(err)
 		}
 		if strings.HasSuffix(hdr.Name, filename)  {
-			log.Debugf("Dopefile: %s", hdr.Name)
 			buf := make([]byte, hdr.Size)
 			_, err := tr.Read(buf)
 			if err != nil {

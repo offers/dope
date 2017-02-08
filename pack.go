@@ -15,6 +15,7 @@ import (
 	"github.com/docker/distribution/reference"
 	regclient "github.com/docker/distribution/registry/client"
 	"github.com/mitchellh/go-homedir"
+	"github.com/offers/dope/out"
 )
 
 type Pack struct {
@@ -26,12 +27,12 @@ type Pack struct {
 	ImageId    string   `json:"ImageId"`
 }
 
-func newPackFromImage(repo string, tag string, name string) (*Pack, error) {
-	// TODO read some info out of the docker image
+func newDefaultPack(repo string, tag string, name string) (*Pack, error) {
 	p := &Pack{
 		Name:       name,
 		Repo:       repo,
 		Tag:        tag,
+		DockerArgs: "-it",
 	}
 	return p, nil
 }
@@ -75,15 +76,15 @@ func highTag(repo string) (string, error) {
 
 // TODO handle versions starting with v, e.g. v1.0.0
 // TODO use 'latest' if no semantic tags, and check image hash for update
+// TODO add error return
 func (p *Pack) checkForUpdate() (avail bool, tag string) {
 	highTag, err := highTag(p.Repo)
 	if err != nil {
-		log.Error(err)
 		return false, ""
 	}
 
 	if "" == highTag {
-		log.Warning("No semantic tags in repo")
+		out.Notice("No semantic tags in repo")
 		return false, ""
 	}
 

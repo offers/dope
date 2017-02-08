@@ -67,7 +67,7 @@ func (m *Manifest) removePackWithName(name string) (*Pack, error) {
 			return p, err
 		}
 	}
-	return nil, nil
+	return nil, errors.New("No pack with name " + name)
 }
 
 func (m *Manifest) addPack(p *Pack) error {
@@ -88,13 +88,6 @@ func (m *Manifest) writeToFile() error {
 	} else {
 		return ioutil.WriteFile(m.filename, data, 0644)
 	}
-}
-
-// For each pack, write a file to /usr/local/bin which
-// will execute that docker repo through dope
-func (m *Manifest) writeAliasFiles() error {
-	//TODO implement me
-	return nil
 }
 
 // Check if new version of named package is available

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/offers/dope/out"
 	"github.com/op/go-logging"
 	"gopkg.in/urfave/cli.v1"
 	"encoding/json"
@@ -18,7 +19,7 @@ var log = logging.MustGetLogger("dope")
 func initConfDir() string {
 	home, err := homedir.Dir()
 	if err != nil {
-		fmt.Println(err)
+		out.Error(err)
 		os.Exit(1)
 	}
 	confDir := filepath.Join(home, ".dope")
@@ -43,7 +44,7 @@ func main() {
 	confDir := initConfDir()
 	manifest, err := initManifest(confDir)
 	if err != nil {
-		fmt.Println(err)
+		out.Error(err)
 		os.Exit(1)
 	}
 
@@ -53,7 +54,21 @@ func main() {
 			Aliases: []string{"sup"},
 			Usage:   "update dope",
 			Action: func(c *cli.Context) error {
-				fmt.Println("TODO update dope")
+				out.Notice("TODO update dope")
+				return nil
+			},
+		},
+		{
+			Name:    "list",
+			Aliases: []string{"l"},
+			Usage:   "list installed packages",
+			Action: func(c *cli.Context) error {
+				notifyIfSelfUpdateAvail()
+
+				out.Info("Installed packages:\n")
+				for _, p := range manifest.Packs {
+					out.Println(p.Name, p.Tag)
+				}
 				return nil
 			},
 		},
@@ -69,7 +84,7 @@ func main() {
 					name := c.Args()[0]
 					p := manifest.getPack(name)
 					if nil == p {
-						log.Warningf("No package named %s is installed", name)
+						out.Notice("No package named", name, "is installed")
 						return err
 					}
 
@@ -92,26 +107,26 @@ func main() {
 					repo := c.Args()[0]
 
 					if manifest.isInstalled(repo) {
-						log.Info(repo, "already installed, try update instead")
+						out.Notice(repo, "already installed, try update instead")
 						return nil
 					}
 
 					// install package
 					pack, err := installImage(repo)
 					if err != nil {
-						log.Error(err)
+						out.Error(err)
 						return err
 					}
 
 					if err := manifest.addPack(pack); err != nil {
-						log.Error(err)
+						out.Error(err)
 						return err
 					}
 
-					log.Info("Installed", pack.Name, pack.Tag)
+					out.Success("Installed", pack.Name, pack.Tag)
 				} else {
-					err = errors.New("no package name given to install")
-					log.Error(err)
+					err = errors.New("No package name given to install")
+					out.Error(err)
 					return err
 				}
 				return nil
@@ -129,27 +144,26 @@ func main() {
 
 					pack, err := manifest.removePackWithName(name)
 					if err != nil {
-						log.Error(err)
-						return err
+						out.Error(err)
+						return nil
 					}
 
 					if nil == pack {
-						log.Warning(name, "is not installed")
+						out.Notice(name, "is not installed")
 						return nil
 					}
 
 					// rm docker image
 					err = removeImage(pack.Repo, pack.Tag)
 					if err != nil {
-						log.Error(err)
 						return err
 					}
 
-					log.Info("Uninstalled", pack.Name)
+					out.Success("Uninstalled", pack.Name)
 				} else {
 					err = errors.New("no package name given to install")
-					log.Error(err)
-					return err
+					out.Error(err)
+					return nil
 				}
 				return nil
 			},
@@ -173,14 +187,15 @@ func main() {
 					name := c.Args()[0]
 					avail, _, tag := manifest.checkForUpdate(name)
 					if avail {
-						fmt.Println("New version", tag, "available for", name)
+						out.Info("New version", tag, "available for", name)
 					} else if !c.Bool("quiet") {
-						fmt.Println("No updates available for", name)
+						out.Info("No update available for", name)
 					}
 				} else {
-					err = errors.New("no package name given to check")
+					out.Notice("no package name given to check")
 				}
-				return err
+
+				return nil
 			},
 		},
 	}
@@ -220,7 +235,7 @@ func installImage(repo string) (*Pack, error) {
 	dopejson, err := dockerGetDopeFile(repo, tag)
 	if err != nil {
 		// no .dope.json found
-		log.Warning("No .dope.json found, using dumb defaults") // TODO get info from user
+		out.Notice("No .dope.json found, using dumb defaults") // TODO get info from user
 	} else {
 		pack := &Pack{Name: name}
 		err = json.Unmarshal(dopejson, pack)
@@ -231,36 +246,36 @@ func installImage(repo string) (*Pack, error) {
 		pack.Repo = repo
 		return pack, nil
 	}
-	return newPackFromImage(repo, tag, name)
+	return newDefaultPack(repo, tag, name)
 }
 
 func removeImage(repo string, tag string) error {
 	image := fmt.Sprintf("%s:%s", repo, tag)
-	log.Infof("Removing Docker image %s...", image)
+	out.Info("Removing Docker image", image, "...")
 	return dockerRmi(image)
 }
 
 func updatePack(m *Manifest, pack *Pack) error {
 	avail, repo, tag := m.checkForUpdate(pack.Name)
 	if avail {
-		log.Infof("New version %s available for %s", tag, pack.Name)
+		out.Info("New version %s available for %s", tag, pack.Name)
 		pack, err := installImage(repo)
 		if err != nil {
-			log.Error(err)
+			out.Error(err)
 			return err
 		}
 
 		oldPack, err := m.removePack(pack)
 		if err != nil {
-			log.Error(err)
+			out.Error(err)
 			return err
 		}
-		removeImage(repo, tag)
+		removeImage(repo, oldPack.Tag)
 
 		m.addPack(pack)
-		log.Infof("Updated %s from %s to %s", pack.Name, oldPack.Tag, pack.Tag)
+		out.Success("Updated %s from %s to %s", pack.Name, oldPack.Tag, pack.Tag)
 	} else {
-		log.Infof("No update available for %s", pack.Name)
+		out.Info("No update available for", pack.Name)
 	}
 
 	return nil
