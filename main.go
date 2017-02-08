@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/op/go-logging"
 	"gopkg.in/urfave/cli.v1"
+	"encoding/json"
 )
 
 var log = logging.MustGetLogger("dope")
@@ -216,6 +217,20 @@ func installImage(repo string) (*Pack, error) {
 	}
 	name := parts[len(parts)-1]
 
+	dopejson, err := dockerGetDopeFile(repo, tag)
+	if err != nil {
+		// no .dope.json found
+		log.Warning("No .dope.json found, using dumb defaults") // TODO get info from user
+	} else {
+		pack := &Pack{Name: name}
+		err = json.Unmarshal(dopejson, pack)
+		if err != nil {
+			return nil, err
+		}
+		pack.Tag = tag
+		pack.Repo = repo
+		return pack, nil
+	}
 	return newPackFromImage(repo, tag, name)
 }
 

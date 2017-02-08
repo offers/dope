@@ -20,7 +20,7 @@ import (
 type Pack struct {
 	Name       string   `json:"name"`
 	Repo       string   `json:"repo"`
-	DockerArgs []string `json:"dockerArgs"`
+	DockerArgs string `json:"dockerArgs"`
 	Cmd        string   `json:"cmd"`
 	Tag        string   `json:"tag"`
 	ImageId    string   `json:"ImageId"`
@@ -32,7 +32,6 @@ func newPackFromImage(repo string, tag string, name string) (*Pack, error) {
 		Name:       name,
 		Repo:       repo,
 		Tag:        tag,
-		DockerArgs: []string{"-it"},
 	}
 	return p, nil
 }
@@ -143,12 +142,11 @@ func (p *Pack) writeStub() error {
 		return err
 	}
 
-	dockerCmd := append([]string{"run"}, p.DockerArgs...)
-	dockerCmd = append(dockerCmd, fmt.Sprintf("%s:%s", p.Repo, p.Tag))
+	dockerCmd := fmt.Sprintf("%s run --rm %s %s:%s", dockerBin, p.DockerArgs, p.Repo, p.Tag)
 	if "" != p.Cmd {
-		dockerCmd = append(dockerCmd, p.Cmd)
+		dockerCmd += " " + p.Cmd
 	}
 
-	s := fmt.Sprintf("#!/bin/bash\ndope check -q %s\nexec %s --rm %s $@", p.Name, dockerBin, strings.Join(dockerCmd, " "))
+	s := fmt.Sprintf("#!/bin/bash\ndope check -q %s\nexec %s $@", p.Name, dockerCmd)
 	return ioutil.WriteFile(p.stubPath(), []byte(s), 0755)
 }

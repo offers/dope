@@ -97,7 +97,7 @@ func (m *Manifest) writeAliasFiles() error {
 	return nil
 }
 
-// Check if new version of named package is avilable
+// Check if new version of named package is available
 // Returns true if so, false otherwise
 func (m *Manifest) checkForUpdate(name string) (avail bool, repo string, tag string) {
 	p := m.getPack(name)
