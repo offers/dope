@@ -79,7 +79,7 @@ func (m *Manifest) writeToFile() error {
 }
 
 // For each pack, write a file to /usr/local/bin which
-// will execute that docker image through dope
+// will execute that docker repo through dope
 func (m *Manifest) writeAliasFiles() error {
 	//TODO implement me
 	return nil
@@ -87,7 +87,7 @@ func (m *Manifest) writeAliasFiles() error {
 
 // Check if new version of named package is avilable
 // Returns true if so, false otherwise
-func (m *Manifest) checkForUpdate(name string) (avail bool, image string) {
+func (m *Manifest) checkForUpdate(name string) (avail bool, repo string) {
 	p := m.getPack(name)
 	if nil != p {
 		return p.checkForUpdate()
@@ -105,9 +105,9 @@ func (m *Manifest) getPack(name string) *Pack {
 	return nil
 }
 
-func (m *Manifest) isInstalled(image string) bool {
+func (m *Manifest) isInstalled(repo string) bool {
 	for _, p := range m.Packs {
-		if p.Image == image {
+		if p.Repo == repo {
 			return true
 		}
 	}

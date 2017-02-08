@@ -82,15 +82,15 @@ func main() {
 				notifyIfSelfUpdateAvail()
 
 				if c.NArg() > 0 {
-					image := c.Args()[0]
+					repo := c.Args()[0]
 
-					if manifest.isInstalled(image) {
-						log.Info(image, "already installed, try update instead")
+					if manifest.isInstalled(repo) {
+						log.Info(repo, "already installed, try update instead")
 						return nil
 					}
 
 					// install package
-					pack, err := installImage(image)
+					pack, err := installImage(repo)
 					if err != nil {
 						log.Error(err)
 						return err
@@ -167,24 +167,27 @@ func selfUpdateAvail() bool {
 	return false
 }
 
-func installImage(image string) (*Pack, error) {
-	tag, err := highTag(image)
+func installImage(repo string) (*Pack, error) {
+	tag, err := highTag(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	//TODO docker pull image:tag
+	err = dockerPull(repo, tag)
+	if err != nil {
+		return nil, err
+	}
 
-	parts := strings.Split(image, "/")
+	parts := strings.Split(repo, "/")
 	if len(parts) < 1 {
-		return nil, errors.New("invalid image: " + image)
+		return nil, errors.New("invalid repo: " + repo)
 	}
 	name := parts[len(parts)-1]
 
 	p := &Pack{
-		Image: image,
-		Tag:   tag,
-		Name:  name,
+		Repo: repo,
+		Tag:  tag,
+		Name: name,
 	}
 	return p, nil
 }

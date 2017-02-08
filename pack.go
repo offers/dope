@@ -14,21 +14,21 @@ import (
 )
 
 type Pack struct {
-	Name    string `json:"name"`
-	Image   string `json:"image"`
-	Cmd     string `json:"cmd"`
-	Tag     string `json:"tag"`
-	ImageId string `json:"imageId"`
+	Name   string `json:"name"`
+	Repo   string `json:"repo"`
+	Cmd    string `json:"cmd"`
+	Tag    string `json:"tag"`
+	RepoId string `json:"repoId"`
 }
 
-func newPack(image string) *Pack {
-	parts := strings.Split(image, "/")
+func newPack(repo string) *Pack {
+	parts := strings.Split(repo, "/")
 	name := parts[len(parts)-1]
-	return &Pack{Name: name, Image: image}
+	return &Pack{Name: name, Repo: repo}
 }
 
-func repoTags(image string) ([]string, error) {
-	ref, err := reference.ParseNamed(image)
+func repoTags(repo string) ([]string, error) {
+	ref, err := reference.ParseNamed(repo)
 	if err != nil {
 		return []string{}, err
 	}
@@ -47,8 +47,8 @@ func repoTags(image string) ([]string, error) {
 	return r.Tags(nil).All(nil)
 }
 
-func highTag(image string) (string, error) {
-	tags, err := repoTags(image)
+func highTag(repo string) (string, error) {
+	tags, err := repoTags(repo)
 	if err != nil {
 		return "", err
 	}
@@ -67,7 +67,7 @@ func highTag(image string) (string, error) {
 // TODO handle versions starting with v, e.g. v1.0.0
 // TODO use 'latest' if no semantic tags, and check image hash for update
 func (p *Pack) checkForUpdate() (avail bool, tag string) {
-	highTag, err := highTag(p.Image)
+	highTag, err := highTag(p.Repo)
 	if err != nil {
 		log.Error(err)
 		return false, ""
