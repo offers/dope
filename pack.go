@@ -3,28 +3,38 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
+
 	"github.com/docker/distribution/reference"
 	regclient "github.com/docker/distribution/registry/client"
-	_ "github.com/motemen/go-loghttp/global"
+	"github.com/mitchellh/go-homedir"
 )
 
 type Pack struct {
-	Name   string `json:"name"`
-	Repo   string `json:"repo"`
-	Cmd    string `json:"cmd"`
-	Tag    string `json:"tag"`
-	RepoId string `json:"repoId"`
+	Name       string   `json:"name"`
+	Repo       string   `json:"repo"`
+	DockerArgs []string `json:"dockerArgs"`
+	Cmd        string   `json:"cmd"`
+	Tag        string   `json:"tag"`
+	ImageId    string   `json:"ImageId"`
 }
 
-func newPack(repo string) *Pack {
-	parts := strings.Split(repo, "/")
-	name := parts[len(parts)-1]
-	return &Pack{Name: name, Repo: repo}
+func newPackFromImage(repo string, tag string, name string) (*Pack, error) {
+	// TODO read some info out of the docker image
+	p := &Pack{
+		Name:       name,
+		Repo:       repo,
+		Tag:        tag,
+		DockerArgs: []string{"-it"},
+	}
+	return p, nil
 }
 
 func repoTags(repo string) ([]string, error) {
@@ -73,7 +83,6 @@ func (p *Pack) checkForUpdate() (avail bool, tag string) {
 		return false, ""
 	}
 
-	log.Debug("highTag:", highTag)
 	if "" == highTag {
 		log.Warning("No semantic tags in repo")
 		return false, ""
@@ -114,7 +123,32 @@ func compareTags(t1 string, t2 string) int {
 	return 0
 }
 
-func (p *Pack) runString() string {
-	// {{p.name}}() { {{os.Args[0]}} run {{p.name}} '{{p.cmd}} $@' }
-	return fmt.Sprintf("%s() { %s run %s '%s $@' }", p.Name, os.Args[0], p.Name, p.Cmd)
+func (p *Pack) stubPath() string {
+	home, err := homedir.Dir()
+	if err != nil {
+		panic("Couldn't determine user home directory")
+	}
+	binDir := filepath.Join(home, ".dope", "bin")
+	os.MkdirAll(binDir, 0755)
+	return filepath.Join(binDir, p.Name)
+}
+
+func (p *Pack) removeStub() error {
+	return os.Remove(p.stubPath())
+}
+
+func (p *Pack) writeStub() error {
+	dockerBin, err := exec.LookPath("docker")
+	if err != nil {
+		return err
+	}
+
+	dockerCmd := append([]string{"run"}, p.DockerArgs...)
+	dockerCmd = append(dockerCmd, fmt.Sprintf("%s:%s", p.Repo, p.Tag))
+	if "" != p.Cmd {
+		dockerCmd = append(dockerCmd, p.Cmd)
+	}
+
+	s := fmt.Sprintf("#!/bin/bash\ndope check -q %s\nexec %s --rm %s $@", p.Name, dockerBin, strings.Join(dockerCmd, " "))
+	return ioutil.WriteFile(p.stubPath(), []byte(s), 0755)
 }

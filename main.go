@@ -28,7 +28,7 @@ func initConfDir() string {
 func setupLogging() {
 	backend := logging.NewLogBackend(os.Stderr, "", 0)
 	var format = logging.MustStringFormatter(
-		`%{color}%{time:15:04:05.000} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`)
+		`%{color}%{time:15:04:05} %{shortfunc} ▶ %{level:.4s} %{id:03x}%{color:reset} %{message}`)
 	backendFormatter := logging.NewBackendFormatter(backend, format)
 	logging.SetBackend(backendFormatter)
 }
@@ -66,10 +66,16 @@ func main() {
 				if c.NArg() > 0 {
 					// update single package
 					name := c.Args()[0]
-					fmt.Println("TODO update", name)
+					p := manifest.getPack(name)
+					if nil == p {
+						log.Warningf("No package named %s is installed", name)
+						return err
+					}
+
+					return updatePack(manifest, p)
 				} else {
 					// update all packages
-					fmt.Println("TODO update all")
+					updateAllPacks(manifest)
 				}
 				return nil
 			},
@@ -111,37 +117,63 @@ func main() {
 			},
 		},
 		{
-			Name:    "run",
-			Aliases: []string{"r"},
-			Usage:   "run a package's alias",
+			Name:    "uninstall",
+			Aliases: []string{"un"},
+			Usage:   "uninstall a package",
 			Action: func(c *cli.Context) (err error) {
 				notifyIfSelfUpdateAvail()
 
 				if c.NArg() > 0 {
-					// run package with args
 					name := c.Args()[0]
-					args := c.Args()[1:]
-					fmt.Println("TODO run", name, args)
+
+					pack, err := manifest.removePackWithName(name)
+					if err != nil {
+						log.Error(err)
+						return err
+					}
+
+					if nil == pack {
+						log.Warning(name, "is not installed")
+						return nil
+					}
+
+					// rm docker image
+					err = removeImage(pack.Repo, pack.Tag)
+					if err != nil {
+						log.Error(err)
+						return err
+					}
+
+					log.Info("Uninstalled", pack.Name)
 				} else {
-					err = errors.New("no package name given to run")
+					err = errors.New("no package name given to install")
+					log.Error(err)
+					return err
 				}
-				return err
+				return nil
 			},
 		},
 		{
 			Name:    "check",
 			Aliases: []string{"ch"},
 			Usage:   "check for updates to package",
+			Flags: []cli.Flag {
+			    cli.BoolFlag{
+			      Name:        "q, quiet",
+			      Usage:       "only output if an update is available",
+			    },
+			  },
+			SkipFlagParsing: false,
 			Action: func(c *cli.Context) (err error) {
 				notifyIfSelfUpdateAvail()
 
 				if c.NArg() > 0 {
 					// check package for updates
 					name := c.Args()[0]
-					avail, tag := manifest.checkForUpdate(name)
+					avail, _, tag := manifest.checkForUpdate(name)
 					if avail {
 						fmt.Println("New version", tag, "available for", name)
-					} else {
+					} else if !c.Bool("quiet") {
 						fmt.Println("No updates available for", name)
 					}
 				} else {
@@ -184,10 +216,44 @@ func installImage(repo string) (*Pack, error) {
 	}
 	name := parts[len(parts)-1]
 
-	p := &Pack{
-		Repo: repo,
-		Tag:  tag,
-		Name: name,
+	return newPackFromImage(repo, tag, name)
+}
+
+func removeImage(repo string, tag string) error {
+	image := fmt.Sprintf("%s:%s", repo, tag)
+	log.Infof("Removing Docker image %s...", image)
+	return dockerRmi(image)
+}
+
+func updatePack(m *Manifest, pack *Pack) error {
+	avail, repo, tag := m.checkForUpdate(pack.Name)
+	if avail {
+		log.Infof("New version %s available for %s", tag, pack.Name)
+		pack, err := installImage(repo)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
+		oldPack, err := m.removePack(pack)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		removeImage(repo, tag)
+
+		m.addPack(pack)
+		log.Infof("Updated %s from %s to %s", pack.Name, oldPack.Tag, pack.Tag)
+	} else {
+		log.Infof("No update available for %s", pack.Name)
 	}
-	return p, nil
+
+	return nil
+}
+
+// TODO return []error
+func updateAllPacks(m *Manifest) {
+	for _, p := range m.Packs {
+		updatePack(m, p)
+	}
 }

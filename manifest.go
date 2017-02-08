@@ -51,18 +51,30 @@ func manifestFromFile(path string) (*Manifest, error) {
 	return &manifest, nil
 }
 
-func (m *Manifest) removePack(name string) {
+// Removes pack from the manifest and deletes its stub
+func (m *Manifest) removePack(pack *Pack) (*Pack, error) {
+	return m.removePackWithName(pack.Name)
+}
+
+// Removes pack from the manifest by name and deletes its stub
+func (m *Manifest) removePackWithName(name string) (*Pack, error) {
 	//TODO test me
 	for i, p := range m.Packs {
 		if p.Name == name {
 			m.Packs = append(m.Packs[:i], m.Packs[i+1:]...)
-			return
+			err := m.writeToFile()
+			p.removeStub()
+			return p, err
 		}
 	}
+	return nil, nil
 }
 
 func (m *Manifest) addPack(p *Pack) error {
 	m.Packs = append(m.Packs, p)
+	if err := p.writeStub(); err != nil {
+		return err
+	}
 	return m.writeToFile()
 }
 
@@ -87,12 +99,14 @@ func (m *Manifest) writeAliasFiles() error {
 
 // Check if new version of named package is avilable
 // Returns true if so, false otherwise
-func (m *Manifest) checkForUpdate(name string) (avail bool, repo string) {
+func (m *Manifest) checkForUpdate(name string) (avail bool, repo string, tag string) {
 	p := m.getPack(name)
 	if nil != p {
-		return p.checkForUpdate()
+
+		avail, tag := p.checkForUpdate()
+		return avail, p.Repo, tag
 	}
-	return false, ""
+	return false, "", ""
 }
 
 func (m *Manifest) getPack(name string) *Pack {

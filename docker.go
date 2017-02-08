@@ -7,9 +7,13 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-func dockerPull(repo string, tag string) error {
+func newDockerClient() (*docker.Client, error) {
 	endpoint := "unix:///var/run/docker.sock"
-	client, err := docker.NewClient(endpoint)
+	return docker.NewClient(endpoint)
+}
+
+func dockerPull(repo string, tag string) error {
+	client, err := newDockerClient()
 	if err != nil {
 		return err
 	}
@@ -23,4 +27,13 @@ func dockerPull(repo string, tag string) error {
 
 	log.Info("Pulling image", repo, ":", tag, "...")
 	return client.PullImage(opts, docker.AuthConfiguration{})
+}
+
+func dockerRmi(name string) error {
+	client, err := newDockerClient()
+	if err != nil {
+		return err
+	}
+
+	return client.RemoveImage(name)
 }
