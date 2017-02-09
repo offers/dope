@@ -69,7 +69,7 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 		Name: imageData.ID,
 		OutputStream: exportFile,
 	}
-	out.Info("Extracting docker image to find .dope.json...")
+	out.Info("Searching docker image for .dope.json...")
 	err = client.ExportImage(exportOpts)
 	if err != nil {
 		return []byte{}, err
