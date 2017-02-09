@@ -56,8 +56,11 @@ func main() {
 			Usage:   "update dope",
 			Action: func(c *cli.Context) error {
 				out.Info("Installing latest version of dope...")
-				output, _ := exec.Command("bash", "-c", "\\curl -sSL https://raw.githubusercontent.com/offers/dope/master/install.sh | sudo bash").Output()
-				fmt.Printf("%s",output)
+				output, err := exec.Command("bash", "-c", "\\curl -sSL https://raw.githubusercontent.com/offers/dope/master/install.sh | sudo bash").CombinedOutput()
+				if err != nil {
+					out.Error(err)
+				}
+				fmt.Printf("%s", output)
 				return nil
 			},
 		},

@@ -16,6 +16,7 @@ fi
 
 goBin="dope-${goOs}-${goArch}"
 binUrl="https://github.com/offers/dope/releases/download/${release}/${goBin}"
+rm -rf ${localBin}
 curl -L ${binUrl} > ${localBin} 2>/dev/null
 chmod +x ${localBin}
 
