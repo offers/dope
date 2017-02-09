@@ -12,6 +12,7 @@ import (
 	"github.com/op/go-logging"
 	"gopkg.in/urfave/cli.v1"
 	"encoding/json"
+	"os/exec"
 )
 
 var log = logging.MustGetLogger("dope")
@@ -54,7 +55,9 @@ func main() {
 			Aliases: []string{"sup"},
 			Usage:   "update dope",
 			Action: func(c *cli.Context) error {
-				out.Notice("TODO update dope")
+				out.Info("Installing latest version of dope...")
+				output, _ := exec.Command("bash", "-c", "\\curl -sSL https://raw.githubusercontent.com/offers/dope/master/install.sh | sudo bash").Output()
+				fmt.Printf("%s",output)
 				return nil
 			},
 		},

@@ -19,4 +19,4 @@ binUrl="https://github.com/offers/dope/releases/download/${release}/${goBin}"
 curl -L ${binUrl} > ${localBin} 2>/dev/null
 chmod +x ${localBin}
 
-echo Installed dope
+echo Installed dope ${release}
