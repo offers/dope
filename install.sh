@@ -16,7 +16,7 @@ fi
 
 goBin="dope-${goOs}-${goArch}"
 binUrl="https://github.com/offers/dope/releases/download/${release}/${goBin}"
-curl -L ${binUrl} > ${localBin}
+curl -L ${binUrl} > ${localBin} 2>/dev/null
 chmod +x ${localBin}
 
-echo "Installed dope\n"
+echo Installed dope
