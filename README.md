@@ -1,5 +1,5 @@
 # dope
-##
+## About
 Dope manages software distributed as Docker images. It can:
 * Install Docker images and make them available as a command in your shell. No more adding an alias for every image's command.
 * Notify you when a new image version is available, and update it for you.
