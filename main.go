@@ -15,6 +15,8 @@ import (
 	"os/exec"
 )
 
+const Release = "0.0.1"
+
 var log = logging.MustGetLogger("dope")
 
 func initConfDir() string {
@@ -39,6 +41,7 @@ func setupLogging() {
 func main() {
 	app := cli.NewApp()
 	app.Name = "dope"
+	app.Version = Release
 
 	setupLogging()
 
@@ -55,6 +58,18 @@ func main() {
 			Aliases: []string{"sup"},
 			Usage:   "update dope",
 			Action: func(c *cli.Context) error {
+				avail, err := selfUpdateAvail()
+				if err != nil {
+					out.Error(err)
+					out.Notice("Couldn't get the latest release for dope")
+					return nil
+				}
+
+				if !avail {
+					out.Info("dope is already up-to-date")
+					return nil
+				}
+
 				out.Info("Installing latest version of dope...")
 				output, err := exec.Command("bash", "-c", "\\curl -sSL https://raw.githubusercontent.com/offers/dope/master/install.sh | sudo bash").CombinedOutput()
 				if err != nil {
@@ -210,15 +225,22 @@ func main() {
 }
 
 func notifyIfSelfUpdateAvail() {
-	// TODO better message
-	if selfUpdateAvail() {
-		fmt.Println("dope update available")
+	avail, _ := selfUpdateAvail()
+	if avail {
+		out.Info("A new version of dope is available. Run 'dope self-update' to install.")
 	}
 }
 
-func selfUpdateAvail() bool {
-	// TODO implement me
-	return false
+func selfUpdateAvail() (bool, error) {
+	tag, err := getLatestDopeRelease()
+	if err != nil {
+		return false, err
+	}
+
+	if 1 == compareTags(tag, Release) {
+		return true, nil
+	}
+	return false, nil
 }
 
 func installImage(repo string) (*Pack, error) {
