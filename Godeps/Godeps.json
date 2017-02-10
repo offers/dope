@@ -221,8 +221,21 @@
 			"Rev": "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
 		},
 		{
+			"ImportPath": "github.com/fatih/color",
+			"Comment": "v1.2-4-g42c364b",
+			"Rev": "42c364ba490082e4815b5222728711b3440603eb"
+		},
+		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
 			"Rev": "7ec520270a25b306a934a2c24fbba7f9b0bb9ece"
+		},
+		{
+			"ImportPath": "github.com/google/go-github/github",
+			"Rev": "27c7c32b6d369610435bd2ad7b4d8554f235eb01"
+		},
+		{
+			"ImportPath": "github.com/google/go-querystring/query",
+			"Rev": "53e6ce116135b80d037921a7fdd5138cf32d7a8a"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
@@ -234,16 +247,17 @@
 			"Rev": "ad28ea4487f05916463e2423a55166280e8254b5"
 		},
 		{
+			"ImportPath": "github.com/mattn/go-colorable",
+			"Comment": "v0.0.6-9-gd228849",
+			"Rev": "d228849504861217f796da67fae4f6e347643f15"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-isatty",
+			"Rev": "30a891c33c7cde7b02a981314b4228ec99380cca"
+		},
+		{
 			"ImportPath": "github.com/mitchellh/go-homedir",
 			"Rev": "b8bc1bf767474819792c23f32d8286a45736f1c6"
-		},
-		{
-			"ImportPath": "github.com/motemen/go-loghttp",
-			"Rev": "f1552ae0d8e6d1980d67843f78b761a5fade8f67"
-		},
-		{
-			"ImportPath": "github.com/motemen/go-loghttp/global",
-			"Rev": "f1552ae0d8e6d1980d67843f78b761a5fade8f67"
 		},
 		{
 			"ImportPath": "github.com/op/go-logging",
