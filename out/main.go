@@ -22,6 +22,10 @@ func Success(a ...interface{}) (n int, err error) {
 	return colorPrintln(color.FgGreen, a...)
 }
 
+func Successf(format string, a ...interface{}) (n int, err error) {
+	return colorPrintf(format, color.FgGreen, a...)
+}
+
 func Notice(a ...interface{}) (n int, err error) {
 	return colorPrintln(color.FgYellow, a...)
 }

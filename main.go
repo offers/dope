@@ -7,15 +7,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"encoding/json"
 	"github.com/mitchellh/go-homedir"
 	"github.com/offers/dope/out"
 	"github.com/op/go-logging"
 	"gopkg.in/urfave/cli.v1"
-	"encoding/json"
 	"os/exec"
 )
 
-const Release = "0.0.1"
+const Release = "0.0.2"
 
 var log = logging.MustGetLogger("dope")
 
@@ -193,12 +193,12 @@ func main() {
 			Name:    "check",
 			Aliases: []string{"ch"},
 			Usage:   "check for updates to package",
-			Flags: []cli.Flag {
-			    cli.BoolFlag{
-			      Name:        "q, quiet",
-			      Usage:       "only output if an update is available",
-			    },
-			  },
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "q, quiet",
+					Usage: "only output if an update is available",
+				},
+			},
 			SkipFlagParsing: false,
 			Action: func(c *cli.Context) (err error) {
 				notifyIfSelfUpdateAvail()
@@ -286,7 +286,7 @@ func removeImage(repo string, tag string) error {
 func updatePack(m *Manifest, pack *Pack) error {
 	avail, repo, tag := m.checkForUpdate(pack.Name)
 	if avail {
-		out.Info("New version %s available for %s", tag, pack.Name)
+		out.Info("New version", tag, "available for", pack.Name)
 		pack, err := installImage(repo)
 		if err != nil {
 			out.Error(err)
@@ -301,7 +301,7 @@ func updatePack(m *Manifest, pack *Pack) error {
 		removeImage(repo, oldPack.Tag)
 
 		m.addPack(pack)
-		out.Success("Updated %s from %s to %s", pack.Name, oldPack.Tag, pack.Tag)
+		out.Successf("Updated %s from %s to %s", pack.Name, oldPack.Tag, pack.Tag)
 	} else {
 		out.Info("No update available for", pack.Name)
 	}
