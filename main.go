@@ -279,7 +279,7 @@ func installImage(repo string) (*Pack, error) {
 
 func removeImage(repo string, tag string) error {
 	image := fmt.Sprintf("%s:%s", repo, tag)
-	out.Info("Removing Docker image", image, "...")
+	out.Println("Removing Docker image", image, "...")
 	return dockerRmi(image)
 }
 
@@ -301,7 +301,7 @@ func updatePack(m *Manifest, pack *Pack) error {
 		removeImage(repo, oldPack.Tag)
 
 		m.addPack(pack)
-		out.Successf("Updated %s from %s to %s", pack.Name, oldPack.Tag, pack.Tag)
+		out.Successf("Updated %s from %s to %s\n", pack.Name, oldPack.Tag, pack.Tag)
 	} else {
 		out.Info("No update available for", pack.Name)
 	}

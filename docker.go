@@ -5,14 +5,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
 	"archive/tar"
-	"io"
-	"strings"
 	"bytes"
-	"io/ioutil"
 	"fmt"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/offers/dope/out"
+	"io"
+	"io/ioutil"
+	"strings"
 )
 
 func newDockerClient() (*docker.Client, error) {
@@ -32,7 +32,7 @@ func dockerPull(repo string, tag string) error {
 		InactivityTimeout: time.Duration(30) * time.Second,
 	}
 
-	out.Infof("Pulling image %s:%s...\n", repo, tag)
+	out.Printf("Pulling image %s:%s...\n", repo, tag)
 	return client.PullImage(opts, docker.AuthConfiguration{})
 }
 
@@ -53,7 +53,6 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 	defer exportFile.Close()
 	defer os.Remove(exportFile.Name())
 
-
 	client, err := newDockerClient()
 	if err != nil {
 		return []byte{}, err
@@ -65,11 +64,11 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	exportOpts := docker.ExportImageOptions {
-		Name: imageData.ID,
+	exportOpts := docker.ExportImageOptions{
+		Name:         imageData.ID,
 		OutputStream: exportFile,
 	}
-	out.Info("Searching docker image for .dope.json...")
+	out.Println("Searching docker image for .dope.json...")
 	err = client.ExportImage(exportOpts)
 	if err != nil {
 		return []byte{}, err
@@ -91,7 +90,7 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if strings.HasSuffix(hdr.Name, "layer.tar")  {
+		if strings.HasSuffix(hdr.Name, "layer.tar") {
 			buf := make([]byte, hdr.Size)
 			_, err := tr.Read(buf)
 			if err != nil {
@@ -107,7 +106,7 @@ func dockerGetDopeFile(repo string, tag string) ([]byte, error) {
 	return []byte{}, errors.New(".dope.json not found in tar archive")
 }
 
-func dockerGetFileFromLayer(filename string, layer []byte) ([]byte, error){
+func dockerGetFileFromLayer(filename string, layer []byte) ([]byte, error) {
 	tr := tar.NewReader(bytes.NewReader(layer))
 	// Iterate through the files in the archive.
 	for {
@@ -119,7 +118,7 @@ func dockerGetFileFromLayer(filename string, layer []byte) ([]byte, error){
 		if err != nil {
 			log.Fatal(err)
 		}
-		if strings.HasSuffix(hdr.Name, filename)  {
+		if strings.HasSuffix(hdr.Name, filename) {
 			buf := make([]byte, hdr.Size)
 			_, err := tr.Read(buf)
 			if err != nil {
