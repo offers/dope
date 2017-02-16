@@ -10,6 +10,10 @@ func Println(a ...interface{}) (n int, err error) {
 	return fmt.Println(a...)
 }
 
+func Printf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Printf(format, a...)
+}
+
 func Info(a ...interface{}) (n int, err error) {
 	return colorPrintln(color.FgCyan, a...)
 }
