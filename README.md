@@ -10,7 +10,10 @@ Dope manages software distributed as Docker images. It can:
 \curl -sSL https://raw.githubusercontent.com/offers/dope/master/install.sh | sudo bash
 ```
 
-Add `~/.dope/bin` to your PATH
+Add `~/.dope/bin` to your PATH. On OS X set your PATH in `~/.bash_profile`, on Linux you probably want `~/.bashrc`.
+```
+PATH=$PATH:~/.dope/bin
+```
 
 ## Usage
 ```bash
