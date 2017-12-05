@@ -15,7 +15,7 @@ import (
 	"os/exec"
 )
 
-const Release = "0.0.3"
+const Release = "0.0.4"
 
 var log = logging.MustGetLogger("dope")
 
@@ -287,7 +287,7 @@ func updatePack(m *Manifest, pack *Pack) error {
 	avail, repo, tag := m.checkForUpdate(pack.Name)
 	if avail {
 		out.Info("New version", tag, "available for", pack.Name)
-		pack, err := installImage(repo)
+		newPack, err := installImage(repo)
 		if err != nil {
 			out.Error(err)
 			return err
@@ -300,8 +300,8 @@ func updatePack(m *Manifest, pack *Pack) error {
 		}
 		removeImage(repo, oldPack.Tag)
 
-		m.addPack(pack)
-		out.Successf("Updated %s from %s to %s\n", pack.Name, oldPack.Tag, pack.Tag)
+		m.addPack(newPack)
+		out.Successf("Updated %s from %s to %s\n", newPack.Name, oldPack.Tag, newPack.Tag)
 	} else {
 		out.Info("No update available for", pack.Name)
 	}
@@ -311,7 +311,8 @@ func updatePack(m *Manifest, pack *Pack) error {
 
 // TODO return []error
 func updateAllPacks(m *Manifest) {
-	for _, p := range m.Packs {
+	packs := m.Packs
+	for _, p := range packs {
 		updatePack(m, p)
 	}
 }
