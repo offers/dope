@@ -15,7 +15,7 @@ import (
 	"os/exec"
 )
 
-const Release = "0.0.4"
+const Release = "0.0.5"
 
 var log = logging.MustGetLogger("dope")
 
