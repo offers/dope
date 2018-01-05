@@ -37,6 +37,8 @@ Build with go >= 1.9.2
 
 ```$ go build```
 
-Tag and push git, create a release on github, upload binaries for linux and darwin amd64.
+1. Update `install.sh` with the new version number
+2. Tag and push git with the version, like `0.0.1`
+3. Create a release on github, upload binaries for linux and darwin amd64.
 
 Darwin binaries must be built on an OSX host.
