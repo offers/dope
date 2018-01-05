@@ -31,3 +31,12 @@ $ dope self-update # install the latest version of dope
 
 $ dope check my_other_repo # check if an update is available
 ```
+
+## Building/Releasing
+Build with go >= 1.9.2
+
+```$ go build```
+
+Tag and push git, create a release on github, upload binaries for linux and darwin amd64.
+
+Darwin binaries must be built on an OSX host.
