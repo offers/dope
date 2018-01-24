@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-release="0.0.6"
+release="0.0.7"
 localBin="/usr/local/bin/dope"
 os=$(uname -s)
 arch=$(uname -m)

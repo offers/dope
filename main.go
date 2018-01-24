@@ -15,7 +15,7 @@ import (
 	"os/exec"
 )
 
-const Release = "0.0.6"
+const Release = "0.0.7"
 
 var log = logging.MustGetLogger("dope")
 
@@ -41,6 +41,7 @@ func setupLogging() {
 func main() {
 	app := cli.NewApp()
 	app.Name = "dope"
+	app.Usage = "Simple docker package management"
 	app.Version = Release
 
 	setupLogging()
